@@ -71,7 +71,7 @@ const HandleLogged = () => {
 				// alert("Login successfully");
 				setUserInfor(response.data.user);
 				setIsLoading(false);
-				alert("Login successfully");
+				// alert("Login successfully");
 				// navigation.navigate('Home', { user: response.data.user });
 			} else {
 				alert("Login failed");

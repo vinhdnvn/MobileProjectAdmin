@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Image, FlatList, TouchableOpacity } from "react-native";
+import { View, Text, Image, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
 // add icon
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import axios, * as others from "axios";
 import { base_URL } from "../Api/api";
+import { useSelector } from "react-redux";
+import HandleLogged from "../Handle/HandleLogged";
 
 const moviesData = [
 	{
@@ -33,23 +35,37 @@ const moviesData = [
 ];
 
 export default function MoviesTab() {
+	const loginUserData = useSelector((state) => state.personalInfor);
 	const navigation = useNavigation();
 	const [selectedId, setSelectedId] = useState(null);
 	const [numberMovies, setNumberMovies] = useState(0);
+	const [isLoading, setIsLoading] = useState(false);
 
 	const [movies, setMovies] = useState([]);
 
 	useEffect(() => {
+		setIsLoading(true);
 		axios
 			.get(`${base_URL}/movies`)
 			.then((res) => {
 				setMovies(res.data.movies);
+				// get length of the array
+				// console.log(movies.length);
+				setIsLoading(false);
 			})
 			.catch((err) => {
 				console.log(err);
 				alert("error");
+				setIsLoading(false);
 			});
 	}, []);
+	if (isLoading) {
+		return (
+			<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+				<ActivityIndicator size="large" color="#0000ff" />
+			</View>
+		);
+	}
 
 	const MovieItem = ({ item }) => {
 		return (
@@ -63,7 +79,16 @@ export default function MoviesTab() {
 					borderColor: "#E2E2E2",
 				}}
 				onPress={() => {
-					navigation.navigate("MoviesUpdate");
+					navigation.navigate("MoviesUpdate", {
+						id: item._id,
+						nameMovie: item.nameMovie,
+						image: item.image,
+						rating: item.rating,
+						year: item.year,
+						video: item.video,
+						description: item.description,
+						gerne: item.gerne,
+					});
 				}}
 			>
 				{/* create text with style with 5% and have the numberMovies increment */}
@@ -95,24 +120,35 @@ export default function MoviesTab() {
 		);
 	};
 	return (
-		<View style={{ flex: 1 }}>
+		<View style={{ flex: 1, width: "100%", height: "100%" }}>
 			{/* <TouchableOpacity style={{ position: "absolute", top: 5, zIndex: 10 }}>
 				<Feather name="plus-square" size={24} color="black" />
 			</TouchableOpacity> */}
-			<View
-				style={{ flexDirection: "row", padding: 5, justifyContent: "center", alignItems: "center" }}
-			>
-				<Text style={{ flex: 5, marginLeft: 10 }}>Name</Text>
-				<Text style={{ flex: 1, marginLeft: -200 }}>Rating</Text>
-				<Text style={{ marginRight: 20 }}>Year</Text>
-			</View>
-			<FlatList
-				data={movies}
-				keyExtractor={(item) => item._id}
-				renderItem={MovieItem}
-				contentContainerStyle={{ flexGrow: 1 }}
-				showsVerticalScrollIndicator={false}
-			/>
+			{loginUserData.token ? (
+				<View>
+					<View
+						style={{
+							flexDirection: "row",
+							padding: 5,
+							justifyContent: "center",
+							alignItems: "center",
+						}}
+					>
+						<Text style={{ flex: 5, marginLeft: 10 }}>Name</Text>
+						<Text style={{ flex: 1, marginLeft: -200 }}>Rating</Text>
+						<Text style={{ marginRight: 20 }}>Year</Text>
+					</View>
+					<FlatList
+						data={movies}
+						keyExtractor={(item) => item._id}
+						renderItem={MovieItem}
+						contentContainerStyle={{ flexGrow: 1 }}
+						showsVerticalScrollIndicator={false}
+					/>
+				</View>
+			) : (
+				<HandleLogged />
+			)}
 		</View>
 	);
 }

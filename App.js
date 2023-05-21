@@ -13,25 +13,35 @@ import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import AccountTab from "./src/Screens/AccountTab";
 import MoviesTab from "./src/Screens/MoviesTab";
 import { Feather } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { createStackNavigator } from "@react-navigation/stack";
 import MoviesUpdate from "./src/UpdateScreens/MoviesUpdate";
 import MoviesAdd from "./src/AddScreens/MoviesAdd";
-import { Provider } from "react-redux";
+
 import { store } from "./src/Redux/store";
 import ChooseCinema from "./src/AddScreens/ChooseCinema";
+import UserUpdate from "./src/UpdateScreens/UserUpdate";
 // =========REDUX========
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
+import { useSelector, useDispatch, Provider } from "react-redux";
+import { LOGOUT } from "./src/Redux/Reducers/inforReducer";
+import LogOuTab from "./src/Screens/LogOuTab";
 
-function CustomDrawerContent(props) {
-	return (
-		<DrawerContentScrollView {...props}>
-			<DrawerItemList {...props} />
-			<DrawerItem label="Logout" onPress={() => alert("Logout")} />
-		</DrawerContentScrollView>
-	);
-}
+// function CustomDrawerContent(props) {
+// 	return (
+// 		<DrawerContentScrollView {...props}>
+// 			<DrawerItemList {...props} />
+// 			<DrawerItem
+// 				label="Logout"
+// 				onPress={() => {
+// 					useDispatch(LOGOUT());
+// 				}}
+// 			/>
+// 		</DrawerContentScrollView>
+// 	);
+// }
 
 const MovieStack = () => {
 	return (
@@ -58,14 +68,24 @@ const MovieStack = () => {
 	);
 };
 
+const UserStack = () => {
+	return (
+		<Stack.Navigator>
+			<Stack.Screen options={{ headerShown: false }} name="Users" component={AccountTab} />
+			<Stack.Screen
+				options={{ headerShown: true, headerTitle: "" }}
+				name="UsersUpdate"
+				component={UserUpdate}
+			/>
+		</Stack.Navigator>
+	);
+};
+
 export default function App() {
 	return (
 		<Provider store={store}>
 			<NavigationContainer>
-				<Drawer.Navigator
-					drawerContent={(props) => <CustomDrawerContent {...props} />}
-					initialRouteName="Home"
-				>
+				<Drawer.Navigator initialRouteName="Home">
 					<Drawer.Screen
 						options={{
 							headerStyle: {
@@ -81,15 +101,31 @@ export default function App() {
 						name="Home"
 						component={HomeScreen}
 					/>
-					<Drawer.Screen name="Notifications" component={NotificationsScreen} />
-					<Drawer.Screen name="Users" component={AccountTab} />
+					{/* <Drawer.Screen name="Notifications" component={NotificationsScreen} /> */}
+					<Drawer.Screen
+						options={{
+							headerRight: () => {
+								const navigation = useNavigation();
+								// return (
+								// 	<TouchableOpacity
+								// 		onPress={() => navigation.navigate("MoviesAdd")}
+								// 		style={{ marginRight: 10 }}
+								// 	>
+								// 		<Ionicons name="trash-bin-outline" size={25} color="gray" />
+								// 	</TouchableOpacity>
+								// );
+							},
+						}}
+						name="User"
+						component={UserStack}
+					/>
 					<Drawer.Screen
 						options={{
 							headerRight: () => {
 								const navigation = useNavigation();
 								return (
 									<TouchableOpacity
-										onPress={() => navigation.navigate("Cinema")}
+										onPress={() => navigation.navigate("MoviesAdd")}
 										style={{ marginRight: 10 }}
 									>
 										<Feather name="plus-square" size={25} color="gray" />
@@ -100,6 +136,7 @@ export default function App() {
 						name="MoviesTab"
 						component={MovieStack}
 					/>
+					<Drawer.Screen name="LogOut" component={LogOuTab} />
 				</Drawer.Navigator>
 			</NavigationContainer>
 		</Provider>

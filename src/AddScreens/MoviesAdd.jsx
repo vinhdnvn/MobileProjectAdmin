@@ -16,16 +16,34 @@ import { base_URL } from "../Api/api";
 import { useDispatch, useSelector } from "react-redux";
 import { setCinema } from "../Redux/Actions/cinemaAction";
 import { MaterialIcons } from "@expo/vector-icons";
-import { firebase } from "../Api/firebase";
-import { set } from "react-native-reanimated";
+// import { firebase } from "../Api/firebase";
+import { ref, getStorage, getDownloadURL, uploadBytesResumable } from "firebase/storage";
+import config from "../Api/firebase";
+import { initializeApp } from "firebase/app";
+import { CommonActions, useNavigation } from "@react-navigation/native";
+
+initializeApp(config.firebase);
+const storage = getStorage();
+
+const giveCurrentDateTime = () => {
+	const today = new Date();
+	const date = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
+	const time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+	const dateTime = date + " " + time;
+	return dateTime;
+};
 
 export default function MoviesAdd() {
+	const navigation = useNavigation();
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [image, setImage] = useState(null);
 	const [time, setTime] = useState("");
 	const [video, setVideo] = useState(null);
+	const [gerne, setGerne] = useState("");
+	const [year, setYear] = useState("");
 	const [selected, setSelected] = useState("");
+	const [rating, setRating] = useState("");
 	const [listCinemas, setListCinemas] = useState([]);
 	const cinemaData = useSelector((state) => state.cinemaInfor);
 	const [uploading, setUploading] = useState(false);
@@ -39,26 +57,17 @@ export default function MoviesAdd() {
 			quality: 1,
 			// base64: true,
 		});
-		const source = { uri: result.assets[0].uri };
+		const source = result.assets[0].uri;
 		console.log(source);
 		setImage(source);
 	};
 
-	const uploadImage = async () => {
-		setUploading(true);
-		const response = await fetch(image.uri);
-		const blob = await response.blob();
-		const filename = image.uri.substring(image.uri.lastIndexOf("/") + 1);
-		const ref = firebase.storage().ref().child(`images/${filename}`).put(blob);
-		try {
-			await ref;
-		} catch (error) {
-			console.log(error);
-		}
-		setUploading(false);
-		Alert.alert("Photo uploaded");
-		setImage(null);
-	};
+	const image1 =
+		"https://www.indiewire.com/wp-content/uploads/2022/11/Decision-to-Leave.jpg?w=1280";
+	const video1 =
+		"https://firebasestorage.googleapis.com/v0/b/ticketbox2-39535.appspot.com/o/videos%2FMeg2.mp4?alt=media&token=8c7e8e71-a31d-4c1e-a073-f2b227118f2a";
+
+	const uploadImage = async () => {};
 
 	const pickFile = async () => {
 		let result = await DocumentPicker.getDocumentAsync({
@@ -66,7 +75,7 @@ export default function MoviesAdd() {
 		});
 		try {
 			console.log(result);
-			const source = { uri: result.uri };
+			const source = result.uri;
 			setVideo(source);
 		} catch (error) {
 			console.log(error);
@@ -74,10 +83,13 @@ export default function MoviesAdd() {
 	};
 	const uploadFile = async () => {
 		setUploading(true);
-		const response = await fetch(video.uri);
+		const response = await fetch(video);
 		const blob = await response.blob();
-		const filename = video.uri.substring(video.uri.lastIndexOf("/") + 1);
+		const filename = video.substring(video.lastIndexOf("/") + 1);
 		const ref = firebase.storage().ref().child(`videos/${filename}`).put(blob);
+		// get download URL after uploading
+		const downloadURL = await ref.snapshot.ref.getDownloadURL();
+
 		try {
 			await ref;
 		} catch (error) {
@@ -85,11 +97,8 @@ export default function MoviesAdd() {
 		}
 		setUploading(false);
 		Alert.alert("Video uploaded");
-		setVideo(null);
+		setVideo(downloadURL);
 	};
-
-	const [imageURL, setImageURL] = useState("");
-	const [videoURL, setVideoURL] = useState("");
 
 	const [selectedImage, setSelectedImage] = useState(false);
 	const [selectedVideo, setSelectedVideo] = useState(false);
@@ -118,12 +127,45 @@ export default function MoviesAdd() {
 	};
 
 	const handleSubmit = () => {
-		// Handle submitting the new movie to your backend server
+		// console.log("nameMovie", name);
+		// console.log("description", description);
+		// console.log("image", image);
+		// console.log("video", video);
+		// console.log("time", time);
+		// console.log("gerne", gerne);
+		// console.log("rating", rating);
+		// uploadFile();
+		// uploadImage();
+		axios
+			.post(`${base_URL}/movies`, {
+				nameMovie: name,
+				description: description,
+				image: image1,
+				video: video1,
+				gerne: gerne,
+				time: time,
+				rating: rating,
+			})
+			.then((res) => {
+				console.log(res.data);
+				navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: "Movies" }] }));
+			})
+			.catch((err) => {
+				console.log(err);
+			});
 	};
+
+	const cinemaState = useSelector((state) => state.cinemaInfor);
 	return (
 		<ScrollView style={styles.container}>
 			<Text style={styles.label}>Name:</Text>
 			<TextInput style={styles.input} value={name} onChangeText={setName} />
+
+			<Text style={styles.label}>Gerne:</Text>
+			<TextInput style={styles.input} value={gerne} onChangeText={setGerne} />
+
+			<Text style={styles.label}>Raing: (5)</Text>
+			<TextInput style={styles.input} value={rating} onChangeText={setRating} />
 
 			<Text style={styles.label}>Description:</Text>
 			<TextInput style={styles.input} value={description} onChangeText={setDescription} />
@@ -171,7 +213,7 @@ export default function MoviesAdd() {
 				</TouchableOpacity>
 			</View>
 			<View style={{ justifyContent: "center", alignItems: "center" }}>
-				{image && <Image source={{ uri: image.uri }} style={styles.image} />}
+				{image && <Image source={{ uri: image }} style={styles.image} />}
 			</View>
 
 			<Text style={styles.label}>Time:</Text>
